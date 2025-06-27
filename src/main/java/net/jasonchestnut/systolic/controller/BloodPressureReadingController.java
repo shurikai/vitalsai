@@ -27,8 +27,13 @@ public class BloodPressureReadingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/user/{userId}")
+    public List<BloodPressureReadingResponse> getReadingsByUserId(@PathVariable("userId") Long userId) {
+        return bloodPressureReadingService.getReadingsByUserId(userId);
+    }
+
     @PostMapping
-    public BloodPressureReadingResponse createReading(@RequestBody BloodPressureReading reading) {
+    public BloodPressureReading createReading(@RequestBody BloodPressureReading reading) {
         return bloodPressureReadingService.createReading(reading);
     }
 

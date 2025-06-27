@@ -30,6 +30,11 @@ public class BloodPressureReadingService {
         return bloodPressureReadingRepository.findById(id).map(readingMapper::toReadingResponse);
     }
 
+    public List<BloodPressureReadingResponse> getReadingsByUserId(Long userId) {
+        return bloodPressureReadingRepository.findByUserId(userId).stream()
+                .map(readingMapper::toReadingResponse).toList();
+    }
+
     public BloodPressureReading createReading(BloodPressureReading reading) {
         return bloodPressureReadingRepository.save(reading);
     }

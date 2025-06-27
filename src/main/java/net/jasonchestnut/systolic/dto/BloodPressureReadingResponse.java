@@ -1,5 +1,6 @@
 package net.jasonchestnut.systolic.dto;
 
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 
 
@@ -9,7 +10,7 @@ public record BloodPressureReadingResponse(
         Integer systolic,
         Integer diastolic,
         Integer pulse,
-        String readingTimestamp,
+        OffsetDateTime readingTimestamp,
         HashMap<String, Object> notes
 ) {
 }
