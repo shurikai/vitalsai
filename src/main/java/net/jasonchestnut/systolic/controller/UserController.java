@@ -1,5 +1,7 @@
 package net.jasonchestnut.systolic.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import net.jasonchestnut.systolic.dto.UserResponse;
 import net.jasonchestnut.systolic.entity.User;
 import net.jasonchestnut.systolic.service.UserService;
@@ -20,11 +22,13 @@ public class UserController {
         return userService.getAllUsers();
     }
 
+    @Operation(summary = "Get user by ID", description = "Retrieve a user by their unique identifier.")
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable("id") Long id) {
-        return userService.getUserById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<UserResponse> getUserById(
+            @Parameter(description = "ID of the user to retrieve", required = true)
+            @PathVariable("id") Long id) {
+        UserResponse response = userService.getUserById(id);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
@@ -34,19 +38,12 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable("id") Long id, @RequestBody User userDetails) {
-        try {
-            User updatedUser = userService.updateUser(id, userDetails);
-            return ResponseEntity.ok(updatedUser);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        User updatedUser = userService.updateUser(id, userDetails);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable("id") Long id) {
-        if (userService.getUserById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }

@@ -2,6 +2,7 @@ package net.jasonchestnut.systolic.service;
 
 import net.jasonchestnut.systolic.dto.BloodPressureReadingResponse;
 import net.jasonchestnut.systolic.entity.BloodPressureReading;
+import net.jasonchestnut.systolic.exception.ResourceNotFoundException;
 import net.jasonchestnut.systolic.mapper.ReadingMapper;
 import net.jasonchestnut.systolic.repository.BloodPressureReadingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +27,10 @@ public class BloodPressureReadingService {
                 .map(readingMapper::toReadingResponse).toList();
     }
 
-    public Optional<BloodPressureReadingResponse> getReadingById(Long id) {
-        return bloodPressureReadingRepository.findById(id).map(readingMapper::toReadingResponse);
+    public BloodPressureReadingResponse getReadingById(Long id) {
+        return bloodPressureReadingRepository.findById(id)
+                .map(readingMapper::toReadingResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Blood pressure reading not found with id: " + id));
     }
 
     public List<BloodPressureReadingResponse> getReadingsByUserId(Long userId) {
@@ -40,26 +43,23 @@ public class BloodPressureReadingService {
     }
 
     public BloodPressureReadingResponse updateReading(Long id, BloodPressureReading readingDetails) {
-//        return bloodPressureReadingRepository.findById(id).map(reading -> {
-//            reading.setSystolic(readingDetails.getSystolic());
-//            reading.setDiastolic(readingDetails.getDiastolic());
-//            reading.setReadingTimestamp(readingDetails.getReadingTimestamp());
-//            reading.setNotes(readingDetails.getNotes());
-//            // Set other fields as needed
-//            return bloodPressureReadingRepository.save(reading);
-//        }).orElseThrow(() -> new RuntimeException("Reading not found"));
-        return new BloodPressureReadingResponse(
-                readingDetails.getId(),
-                null,
-                readingDetails.getSystolic(),
-                readingDetails.getDiastolic(),
-                readingDetails.getPulse(),
-                null,
-                null
-        );
+        BloodPressureReading reading = bloodPressureReadingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Blood pressure reading not found with id: " + id));
+
+        reading.setSystolic(readingDetails.getSystolic());
+        reading.setDiastolic(readingDetails.getDiastolic());
+        reading.setPulse(readingDetails.getPulse());
+        reading.setReadingTimestamp(readingDetails.getReadingTimestamp());
+        reading.setNotes(readingDetails.getNotes());
+
+        BloodPressureReading updatedReading = bloodPressureReadingRepository.save(reading);
+        return readingMapper.toReadingResponse(updatedReading);
     }
 
     public void deleteReading(Long id) {
+        if (!bloodPressureReadingRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Blood pressure reading not found with id: " + id);
+        }
         bloodPressureReadingRepository.deleteById(id);
     }
 }
