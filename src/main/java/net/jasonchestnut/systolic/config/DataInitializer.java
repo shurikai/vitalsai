@@ -10,6 +10,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
@@ -26,7 +27,10 @@ public class DataInitializer {
     @Bean
     @Profile("dev")
     @Transactional
-    CommandLineRunner initDatabase(UserRepository userRepository, BloodPressureReadingRepository readingRepository) {
+    CommandLineRunner initDatabase(
+            UserRepository userRepository,
+            BloodPressureReadingRepository readingRepository,
+            PasswordEncoder passwordEncoder) {
         return args -> {
             // Clean up previous data
             log.info("Clearing existing data in the database for development testing...");
@@ -35,12 +39,14 @@ public class DataInitializer {
 
             log.info("Database cleared. Initializing with development data...");
             // Create and save a user
-            User devUser = userRepository.save(new User(
+            User devUser = new User(
+                    "jasonchestnut",
                     "jason@email.com",
-                    "password123",
+                     passwordEncoder.encode("password123"),
                     "jason",
-                    "chestnut")
-            );
+                    "chestnut",
+                    "ROLE_USER");
+            userRepository.save(devUser);
 
             BloodPressureReading reading1 = new BloodPressureReading(
                     devUser, 118, 78, 60, OffsetDateTime.now().minusDays(2)

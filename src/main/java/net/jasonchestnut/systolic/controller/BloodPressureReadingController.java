@@ -1,58 +1,62 @@
 package net.jasonchestnut.systolic.controller;
 
+import net.jasonchestnut.systolic.dto.BloodPressureReadingRequest;
 import net.jasonchestnut.systolic.dto.BloodPressureReadingResponse;
 import net.jasonchestnut.systolic.entity.BloodPressureReading;
-import net.jasonchestnut.systolic.exception.ResourceNotFoundException;
-import net.jasonchestnut.systolic.mapper.ReadingMapper;
 import net.jasonchestnut.systolic.service.BloodPressureReadingService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/readings")
 public class BloodPressureReadingController {
-    private BloodPressureReadingService bloodPressureReadingService;
-    private ReadingMapper readingMapper;
+    private final BloodPressureReadingService bloodPressureReadingService;
 
-    public BloodPressureReadingController(BloodPressureReadingService bloodPressureReadingService, ReadingMapper readingMapper) {
+    public BloodPressureReadingController(BloodPressureReadingService bloodPressureReadingService) {
         this.bloodPressureReadingService = bloodPressureReadingService;
-        this.readingMapper = readingMapper;
     }
 
     @GetMapping
-    public List<BloodPressureReadingResponse> getAllReadings() {
-        return bloodPressureReadingService.getAllReadings();
+    public List<BloodPressureReadingResponse> getReadingsForCurrentUser(Authentication authentication) {
+        return bloodPressureReadingService.getReadingsForCurrentUser(authentication.getName());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BloodPressureReadingResponse> getReadingById(@PathVariable("id") Long id) {
-        BloodPressureReadingResponse response = bloodPressureReadingService.getReadingById(id);
+    public ResponseEntity<BloodPressureReadingResponse> getReadingById(
+            @PathVariable("id") Long id,
+            Authentication authentication) {
+        BloodPressureReadingResponse response = bloodPressureReadingService.getReadingByIdForUser(id, authentication.getName());
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/user/{userId}")
-    public List<BloodPressureReadingResponse> getReadingsByUserId(@PathVariable("userId") Long userId) {
-        return bloodPressureReadingService.getReadingsByUserId(userId);
-    }
-
     @PostMapping
-    public BloodPressureReadingResponse createReading(@RequestBody BloodPressureReading reading) {
-        return readingMapper.toReadingResponse(bloodPressureReadingService.createReading(reading));
+    public ResponseEntity<BloodPressureReadingResponse> createReading(
+            @RequestBody BloodPressureReadingRequest reading,
+            Authentication authentication) {
+        BloodPressureReadingResponse createdReading = bloodPressureReadingService.createReadingForUser(reading, authentication.getName());
+        return new ResponseEntity<>(createdReading, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BloodPressureReadingResponse> updateReading(@PathVariable("id") Long id, @RequestBody BloodPressureReading readingDetails) {
-        BloodPressureReadingResponse updatedReading = bloodPressureReadingService.updateReading(id, readingDetails);
+    public ResponseEntity<BloodPressureReadingResponse> updateReading(
+            @PathVariable("id") Long id,
+            @RequestBody BloodPressureReadingRequest request,
+            Authentication authentication) {
+        BloodPressureReadingResponse updatedReading =
+                bloodPressureReadingService.updateReadingForUser(id, request, authentication.getName());
         return ResponseEntity.ok(updatedReading);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReading(@PathVariable("id") Long id) {
-        bloodPressureReadingService.deleteReading(id);
+    public ResponseEntity<Void> deleteReading(
+            @PathVariable("id") Long id,
+            Authentication authentication) {
+        bloodPressureReadingService.deleteReadingForUser(id, authentication.getName());
         return ResponseEntity.noContent().build(); // Returns a 204 No Content response
     }
 }
