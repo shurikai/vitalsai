@@ -1,8 +1,9 @@
 package net.jasonchestnut.systolic.service;
 
 import net.jasonchestnut.systolic.dto.RegistrationRequest;
-import net.jasonchestnut.systolic.entity.User;
-import net.jasonchestnut.systolic.repository.UserRepository;
+import net.jasonchestnut.systolic.entity.Patient;
+import net.jasonchestnut.systolic.entity.Role;
+import net.jasonchestnut.systolic.repository.PatientRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -12,26 +13,26 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthService {
 
-    private final UserRepository userRepository;
+    private final PatientRepository patientRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
+    public AuthService(PatientRepository patientRepository, PasswordEncoder passwordEncoder) {
+        this.patientRepository = patientRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User registerUser(RegistrationRequest request) {
-        if (userRepository.findByUsername(request.username()).isPresent()) {
+    public Patient registerUser(RegistrationRequest request) {
+        if (patientRepository.findByUsername(request.username()).isPresent()) {
             // In a real app, you'd throw a more specific, custom exception
             throw new IllegalStateException("Username '" + request.username() + "' is already taken.");
         }
 
-        User newUser = new User();
-        newUser.setUsername(request.username());
-        newUser.setEmail(request.email());
-        newUser.setPassword(passwordEncoder.encode(request.password()));
-        newUser.setRole("ROLE_USER"); // Assign a default role
+        Patient newPatient = new Patient();
+        newPatient.setUsername(request.username());
+        newPatient.setEmail(request.email());
+        newPatient.setPassword(passwordEncoder.encode(request.password()));
+        newPatient.setRole(Role.ROLE_USER); // Assign a default role
 
-        return userRepository.save(newUser);
+        return patientRepository.save(newPatient);
     }
 }

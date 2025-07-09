@@ -16,7 +16,7 @@ Systolic is a secure, web-based API for managing and visualizing personal blood 
 
 ## Features
 
--   **User Authentication**: Secure user registration and login endpoints using `BCrypt` password hashing.
+-   **User Authentication**: Secure patient registration and login endpoints using `BCrypt` password hashing.
 -   **Token-Based Security**: Stateless, JWT-based authentication protects all sensitive API endpoints.
 -   **Blood Pressure Reading Management**: Full CRUD (Create, Read, Update, Delete) operations for blood pressure readings.
 -   **Data Isolation**: Users can only access and manage their own data, enforced at the service layer.
@@ -44,7 +44,7 @@ cd backend
 
 ### 2. Configure the Database
 
-1. Access your PostgreSQL instance and create a new database and user for the application.
+1. Access your PostgreSQL instance and create a new database and patient for the application.
 ```sql
     CREATE DATABASE systolic_db;
     CREATE USER systolic WITH PASSWORD 'example';
@@ -107,9 +107,9 @@ The API base path is /api.
 
 ### Key Endpoints
 
-- POST /api/auth/register: Register a new user.
+- POST /api/auth/register: Register a new patient.
 - POST /api/auth/login: Log in to receive a JWT.
-- GET /api/readings: Get all blood pressure readings for the authenticated user.
+- GET /api/readings: Get all blood pressure readings for the authenticated patient.
 - POST /api/readings: Create a new blood pressure reading.
 - GET /api/readings/{id}: Get a specific reading by its ID.
 - PUT /api/readings/{id}: Update an existing reading.

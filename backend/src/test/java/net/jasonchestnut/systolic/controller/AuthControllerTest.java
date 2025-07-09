@@ -1,11 +1,12 @@
 package net.jasonchestnut.systolic.controller;
 
-import net.jasonchestnut.systolic.config.JwtUtil;
 import net.jasonchestnut.systolic.dto.LoginRequest;
 import net.jasonchestnut.systolic.dto.LoginResponse;
 import net.jasonchestnut.systolic.dto.RegistrationRequest;
-import net.jasonchestnut.systolic.repository.UserRepository;
+import net.jasonchestnut.systolic.entity.Patient;
+import net.jasonchestnut.systolic.repository.PatientRepository;
 import net.jasonchestnut.systolic.service.AuthService;
+import net.jasonchestnut.systolic.service.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,13 +35,13 @@ class AuthControllerTest {
     private AuthenticationManager authenticationManager;
 
     @Mock
-    private JwtUtil jwtUtil;
+    private JwtService jwtService;
 
     @Mock
     private AuthService authService;
 
     @Mock
-    private UserRepository userRepository;
+    private PatientRepository patientRepository;
 
     @InjectMocks
     private AuthController authController;
@@ -57,8 +58,8 @@ class AuthControllerTest {
     @Test
     void register_shouldReturnCreated_whenUserIsRegisteredSuccessfully() {
         // Arrange
-        net.jasonchestnut.systolic.entity.User user= new net.jasonchestnut.systolic.entity.User();
-        when(authService.registerUser(any(RegistrationRequest.class))).thenReturn(user);
+        Patient patient = new Patient();
+        when(authService.registerUser(any(RegistrationRequest.class))).thenReturn(patient);
 
         // Act
         ResponseEntity<String> response = authController.register(registrationRequest);
@@ -66,14 +67,14 @@ class AuthControllerTest {
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("User registered successfully!", response.getBody());
+        assertEquals("Patient registered successfully!", response.getBody());
         verify(authService, times(1)).registerUser(registrationRequest);
     }
 
     @Test
     void register_shouldThrowException_whenUserIsNotRegisteredSuccessfully() {
         // Arrange
-        net.jasonchestnut.systolic.entity.User user= new net.jasonchestnut.systolic.entity.User();
+        Patient patient = new Patient();
         when(authService.registerUser(any(RegistrationRequest.class))).thenThrow(new IllegalStateException("Registration failed"));
 
         // Act & Assert
@@ -81,8 +82,8 @@ class AuthControllerTest {
             authController.register(registrationRequest);
         });
 
-        // Verify that the user repository was not called to save a user
-        verify(userRepository, never()).save(any(net.jasonchestnut.systolic.entity.User.class));
+        // Verify that the patient repository was not called to save a patient
+        verify(patientRepository, never()).save(any(Patient.class));
     }
 
     @Test
@@ -100,7 +101,7 @@ class AuthControllerTest {
         ).thenReturn(authentication);
 
         when(authentication.getPrincipal()).thenReturn(userDetails);
-        when(jwtUtil.generateToken(username)).thenReturn(expectedToken);
+        when(jwtService.generateToken(userDetails)).thenReturn(expectedToken);
 
         // Act
         ResponseEntity<LoginResponse> response = authController.login(loginRequest);
@@ -112,7 +113,7 @@ class AuthControllerTest {
         assertEquals(expectedToken, response.getBody().token());
 
         verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(jwtUtil, times(1)).generateToken(username);
+        verify(jwtService, times(1)).generateToken(userDetails);
     }
 
     @Test
@@ -131,6 +132,6 @@ class AuthControllerTest {
         });
 
         verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(jwtUtil, never()).generateToken(anyString());
+        verify(jwtService, never()).generateToken(any());
     }
 }

@@ -1,5 +1,6 @@
 package net.jasonchestnut.systolic.config;
 
+import net.jasonchestnut.systolic.service.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,11 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class JwtFilterTest {
+class JwtAuthenticationFilterTest {
 
     // Mocks for the filter's dependencies
     @Mock
-    private JwtUtil jwtUtil;
+    private JwtService jwtService;
     @Mock
     private UserDetailsService userDetailsService;
     @Mock
@@ -39,7 +40,7 @@ class JwtFilterTest {
 
     // The instance of the filter we are testing, with mocks injected
     @InjectMocks
-    private JwtFilter jwtFilter;
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
     void setUp() {
@@ -57,12 +58,12 @@ class JwtFilterTest {
         UserDetails userDetails = new User(username, "password", Collections.emptyList());
 
         when(request.getHeader("Authorization")).thenReturn(authHeader);
-        when(jwtUtil.extractUsername(token)).thenReturn(username);
+        when(jwtService.extractUsername(token)).thenReturn(username);
         when(userDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
-        when(jwtUtil.validateToken(token, userDetails)).thenReturn(true);
+        when(jwtService.isTokenValid(token, userDetails)).thenReturn(true);
 
         // Act: Execute the filter's logic
-        jwtFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Assert: Verify the outcome
         // 1. The security context should now hold an authentication object
@@ -83,12 +84,12 @@ class JwtFilterTest {
         UserDetails userDetails = new User(username, "password", Collections.emptyList());
 
         when(request.getHeader("Authorization")).thenReturn(authHeader);
-        when(jwtUtil.extractUsername(token)).thenReturn(username);
+        when(jwtService.extractUsername(token)).thenReturn(username);
         when(userDetailsService.loadUserByUsername(username)).thenReturn(userDetails);
-        when(jwtUtil.validateToken(token, userDetails)).thenReturn(false); // Token validation fails
+        when(jwtService.isTokenValid(token, userDetails)).thenReturn(false); // Token validation fails.
 
         // Act
-        jwtFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
         // The security context should be empty because the token was invalid
@@ -104,10 +105,10 @@ class JwtFilterTest {
 
         when(request.getHeader("Authorization")).thenReturn(authHeader);
         // Simulate an expired token exception
-        when(jwtUtil.extractUsername(token)).thenThrow(new ExpiredJwtException(null, null, "JWT expired"));
+        when(jwtService.extractUsername(token)).thenThrow(new ExpiredJwtException(null, null, "JWT expired"));
 
         // Act
-        jwtFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
         // The security context should be empty
@@ -121,13 +122,13 @@ class JwtFilterTest {
         when(request.getHeader("Authorization")).thenReturn(null);
 
         // Act
-        jwtFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         verify(filterChain).doFilter(request, response);
         // Ensure JWT logic was never triggered
-        verifyNoInteractions(jwtUtil, userDetailsService);
+        verifyNoInteractions(jwtService, userDetailsService);
     }
 
     @Test
@@ -136,11 +137,11 @@ class JwtFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Basic some-other-token");
 
         // Act
-        jwtFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
         verify(filterChain).doFilter(request, response);
-        verifyNoInteractions(jwtUtil, userDetailsService);
+        verifyNoInteractions(jwtService, userDetailsService);
     }
 }

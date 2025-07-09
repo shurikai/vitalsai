@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 class SecurityConfigTest {
 
     @Mock
-    private JwtFilter jwtRequestFilter;
+    private JwtAuthenticationFilter jwtRequestFilter;
 
     @Mock
     private HttpSecurity httpSecurity;

@@ -1,6 +1,10 @@
 package net.jasonchestnut.systolic.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -14,9 +18,13 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name = "users")
+@Table(name = "patients")
 @EntityListeners(AuditingEntityListener.class)
-public class User implements UserDetails {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Patient implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,45 +53,18 @@ public class User implements UserDetails {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BloodPressureReading> bloodPressureReadings;
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Vitals> vitalsReadings;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private String role;
-
-    public User() {
-    }
-
-    public User(String username, String email, String password, String firstName, String lastName, String role) {
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.role = role;
-    }
+    private Role role;
 
     // --- UserDetails Methods ---
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // We are storing the role as a simple string, so we wrap it here
-        return List.of(new SimpleGrantedAuthority(this.role));
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+        // Use the enum's name for the authority
+        return List.of(new SimpleGrantedAuthority(this.role.name()));
     }
 
     @Override
@@ -98,57 +79,34 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true; // Assuming accounts do not expire
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true; // Assuming accounts are not locked
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true; // Assuming credentials do not expire
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return true; // Assuming all users are enabled by default
+        return true;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
+    // --- Custom equals() and hashCode() (For JPA safety) ---
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof User user)) return false;
-        return id != null && Objects.equals(id, user.id);
+        if (!(o instanceof Patient patient)) return false;
+        return id != null && Objects.equals(id, patient.id);
     }
 
     @Override
     public int hashCode() {
         return getClass().hashCode();
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setRole(String roleUser) {
-        this.role = roleUser;
     }
 }
