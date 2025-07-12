@@ -13,9 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.OffsetDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "patients")
@@ -59,6 +57,17 @@ public class Patient implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
+
+    // Add these relationships to your existing User class:
+
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    private Set<Medication> medications = new HashSet<>();
+
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    private Set<MedicationLog> medicationLogs = new HashSet<>();
+
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    private Set<ActivityLog> activityLogs = new HashSet<>();
 
     // --- UserDetails Methods ---
     @Override

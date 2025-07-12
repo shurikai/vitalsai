@@ -7,7 +7,7 @@
 - RESTful API for logging vitals, medication, and activity
 - Event-driven architecture using Kafka
 - LLM integration for trend summarization and health recommendations
-- Modular Go-based consumer for insight generation
+- Modular Python- and Go-based consumers for insight generation
 - Angular frontend (optional) for tracking and visualization
 
 ## 🏗️ Architecture Overview
@@ -26,7 +26,7 @@
 └────────────┬───────────────┘       │
              │ Kafka Event Bus       │
 ┌────────────▼────────────────┐      │
-│     Go Event Processor      │      │
+│       Event Processor       │      │
 │  - Consumes events          │      │
 │  - Correlates time-series   │      │
 │  - Builds prompts           │      │
@@ -72,7 +72,7 @@
   - `meds-taken`
   - `activity-logged`
 
-### 🔶 Go Kafka Consumer + LLM
+### 🔶 Python-based Kafka Consumer + LLM
 
 - Listens on above topics
 - Buffers recent events (7–30 days)
@@ -96,7 +96,7 @@
 | REST API       | Spring Boot (Java) |
 | Eventing       | Kafka              |
 | Processing     | Go                 |
-| AI             | OpenAI / LangChain |
+| AI             | Python / OpenAI / LangChain |
 | Storage        | PostgreSQL         |
 | Infrastructure | Docker, Kubernetes |
 

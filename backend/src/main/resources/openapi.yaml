@@ -1,0 +1,374 @@
+openapi: 3.0.3
+info:
+  title: Systolic API
+  description: API for managing patient health data including vitals, medications, and activity logs
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PatientResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    MedicationRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        dosage:
+          type: string
+        instructions:
+          type: string
+        frequency:
+          type: string
+
+    MedicationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        dosage:
+          type: string
+        instructions:
+          type: string
+        frequency:
+          type: string
+
+    MedicationLogRequest:
+      type: object
+      required:
+        - medicationId
+        - takenAt
+      properties:
+        medicationId:
+          type: integer
+          format: int64
+        takenAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    MedicationLogResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        medicationId:
+          type: integer
+          format: int64
+        medicationName:
+          type: string
+        takenAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    VitalReadingRequest:
+      type: object
+      required:
+        - systolic
+        - diastolic
+        - pulse
+        - takenAt
+      properties:
+        systolic:
+          type: integer
+          minimum: 0
+        diastolic:
+          type: integer
+          minimum: 0
+        pulse:
+          type: integer
+          minimum: 0
+        takenAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    VitalReadingResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        systolic:
+          type: integer
+        diastolic:
+          type: integer
+        pulse:
+          type: integer
+        takenAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/patients/me:
+    get:
+      tags:
+        - Patient
+      summary: Get current patient's profile
+      description: Retrieves the profile details for the currently authenticated user
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '401':
+          description: Unauthorized
+
+  /api/patients:
+    get:
+      tags:
+        - Patient
+      summary: Get all patients (Admin)
+      description: Retrieves a list of all patients. Requires administrator privileges
+      responses:
+        '200':
+          description: List of patients retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PatientResponse'
+        '403':
+          description: Forbidden - Requires admin role
+
+  /api/patients/{patientId}:
+    get:
+      tags:
+        - Patient
+      summary: Get patient by ID (Admin)
+      description: Retrieves a specific patient by their ID. Requires administrator privileges
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Patient retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientResponse'
+        '404':
+          description: Patient not found
+
+  /api/medications:
+    post:
+      tags:
+        - Medication
+      summary: Create new medication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationRequest'
+      responses:
+        '200':
+          description: Medication created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicationResponse'
+
+    get:
+      tags:
+        - Medication
+      summary: Get medications
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of medications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MedicationResponse'
+
+  /api/medications/{id}:
+    delete:
+      tags:
+        - Medication
+      summary: Delete medication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Medication deleted successfully
+        '404':
+          description: Medication not found
+
+  /api/medication-logs:
+    post:
+      tags:
+        - Medication Log
+      summary: Create medication log
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationLogRequest'
+      responses:
+        '200':
+          description: Medication log created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicationLogResponse'
+
+    get:
+      tags:
+        - Medication Log
+      summary: Get medication logs
+      parameters:
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of medication logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MedicationLogResponse'
+
+  /api/medication-logs/recent:
+    get:
+      tags:
+        - Medication Log
+      summary: Get recent medication logs
+      responses:
+        '200':
+          description: List of recent medication logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MedicationLogResponse'
+
+  /api/medication-logs/{id}:
+    delete:
+      tags:
+        - Medication Log
+      summary: Delete medication log
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Medication log deleted successfully
+        '404':
+          description: Medication log not found
+
+  /api/vitals:
+    post:
+      tags:
+        - Vitals
+      summary: Create vital reading
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VitalReadingRequest'
+      responses:
+        '200':
+          description: Vital reading created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VitalReadingResponse'
+
+    get:
+      tags:
+        - Vitals
+      summary: Get vital readings
+      parameters:
+        - name: start
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of vital readings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VitalReadingResponse'

@@ -20,9 +20,13 @@ public class PatientService {
         this.patientMapper = patientMapper;
     }
 
-    public PatientResponse getPatientByUsername(String username) {
-        Patient patient = patientRepository.findByUsername(username)
+    public Patient findByUsername(String username) {
+        return patientRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found with username: " + username));
+    }
+
+    public PatientResponse getPatientByUsername(String username) {
+        Patient patient = findByUsername(username);
         return patientMapper.toPatientResponse(patient);
     }
 

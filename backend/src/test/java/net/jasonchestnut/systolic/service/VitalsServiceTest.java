@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,7 +60,8 @@ class VitalsServiceTest {
         OffsetDateTime now = OffsetDateTime.now();
         patient = new Patient(
                 1L, "testuser", "test@example.com", "password",
-                "Test", "User", now, now, List.of(), Role.ROLE_USER
+                "Test", "User", now, now, List.of(), Role.ROLE_USER,
+                Set.of(), Set.of(), Set.of()
         );
 
         // The 'vitals' object now has its patient set directly at creation.
@@ -95,7 +97,8 @@ class VitalsServiceTest {
         // Arrange
         Patient anotherPatient = new Patient(
                 2L, "anotheruser", "another@example.com", "password",
-                "Another", "User", OffsetDateTime.now(), OffsetDateTime.now(), List.of(), Role.ROLE_USER
+                "Another", "User", OffsetDateTime.now(), OffsetDateTime.now(), List.of(), Role.ROLE_USER,
+                Set.of(), Set.of(), Set.of()
         );
 
         // The vital belongs to patient 1, but patient 2 is trying to access it
