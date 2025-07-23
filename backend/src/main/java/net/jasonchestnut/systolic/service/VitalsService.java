@@ -5,6 +5,8 @@ import net.jasonchestnut.systolic.dto.VitalReadingRequest;
 import net.jasonchestnut.systolic.dto.VitalReadingResponse;
 import net.jasonchestnut.systolic.entity.Patient;
 import net.jasonchestnut.systolic.entity.Vitals;
+import net.jasonchestnut.systolic.events.EventProducerService;
+import net.jasonchestnut.systolic.events.dto.VitalReadingEvent;
 import net.jasonchestnut.systolic.exception.ResourceNotFoundException;
 import net.jasonchestnut.systolic.exception.UnauthorizedException;
 import net.jasonchestnut.systolic.mapper.VitalMapper; // Assumes you create this mapper
@@ -22,16 +24,18 @@ public class VitalsService {
     private final VitalsRepository vitalsRepository;
     private final PatientRepository patientRepository;
     private final VitalMapper vitalMapper;
+    private final EventProducerService eventProducerService;
 
-    public VitalsService(VitalsRepository vitalsRepository, PatientRepository patientRepository, VitalMapper vitalMapper) {
+    public VitalsService(VitalsRepository vitalsRepository, PatientRepository patientRepository, VitalMapper vitalMapper, EventProducerService eventProducerService) {
         this.vitalsRepository = vitalsRepository;
         this.patientRepository = patientRepository;
         this.vitalMapper = vitalMapper;
+        this.eventProducerService = eventProducerService;
     }
 
     public List<VitalReadingResponse> getVitalsForPatient(String username) {
         Patient patient = findUserByUsername(username);
-        log.error("getVitalsForPatient called for patient: {}", patient.getUsername());
+        log.debug("getVitalsForPatient called for patient: {}", patient.getUsername());
         return vitalsRepository.findByPatientIdOrderByReadingTimestampDesc(patient.getId()).stream()
                 .map(vitalMapper::toVitalReadingResponse)
                 .toList();
@@ -46,25 +50,21 @@ public class VitalsService {
     public VitalReadingResponse createVitalForPatient(VitalReadingRequest request, String username) {
         Patient patient = findUserByUsername(username);
         Vitals newVital = vitalMapper.toEntity(request);
-        newVital.setPatient(patient); // Securely associate with the authenticated patient
+        newVital.setPatient(patient);
 
-        System.out.println("Creating new vital reading: " + newVital);
+        Vitals savedVitals = vitalsRepository.save(newVital);
 
-        Vitals savedVitals;
+        // Produce a Kafka event
+        VitalReadingEvent event = new VitalReadingEvent(
+                savedVitals.getPatient().getId(),
+                savedVitals.getId(),
+                savedVitals.getReadingTimestamp(),
+                savedVitals.getSystolic(),
+                savedVitals.getDiastolic(),
+                savedVitals.getPulse());
+        eventProducerService.sendVitalReadingEvent(event);
 
-        try {
-            savedVitals = vitalsRepository.save(newVital);
-        } catch (Exception e) {
-            log.error("Error saving vital reading: {}", e.getMessage());
-            throw new RuntimeException("Failed to save vital reading", e);
-        }
-
-        try {
-            return vitalMapper.toVitalReadingResponse(savedVitals);
-        } catch (Exception e) {
-            log.error("Error mapping saved vital reading to response: {}", e.getMessage());
-            throw new RuntimeException("Failed to map vital reading to response", e);
-        }
+        return vitalMapper.toVitalReadingResponse(savedVitals);
     }
 
     @Transactional

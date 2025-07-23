@@ -40,5 +40,7 @@ public interface VitalMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "patient", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromRequest(VitalReadingRequest request, @MappingTarget Vitals entity);
 }

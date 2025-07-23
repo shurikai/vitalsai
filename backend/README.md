@@ -2,6 +2,13 @@
 
 Systolic is a secure, web-based API for managing and visualizing personal blood pressure data. This backend is built with Java and Spring Boot, providing a robust, stateless, and secure foundation for a corresponding frontend application.
 
+## TODO List:
+- [ ] Start building out Kafka topics and config classes
+- [ ] Start building Kafka producer(s)
+- [ ] Start building Kafka consumer(s)
+  - Needs to catch updates and write to the DB
+  - Probably one per topic, actually
+
 ## Core Technologies
 
 -   **Framework**: Spring Boot 3.x

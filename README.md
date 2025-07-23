@@ -117,3 +117,29 @@
 
 > This project combines real-time analytics, AI, and modern cloud-native architecture. Built for exploration, insight, and extensibility.
 
+---
+ 
+## ETL (Extract/Transform/Load) Pipeline:
+### Extraction Phase:
+
+- **Device synchronization**: Pull data from wearables, smart scales, blood pressure monitors via APIs or direct connections
+- **Manual entry processing**: Handle user-input data with validation and standardization
+- **Temporal alignment**: Ensure all data points have consistent timestamp formats and timezone handling
+- **Data completeness checks**: Identify missing readings or gaps in continuous monitoring
+
+### Transformation Phase:
+
+- **Unit standardization**: Convert between metric/imperial, normalize measurement units across devices
+- **Outlier detection**: Flag physiologically impossible readings (BP over 300, heart rate under 30, etc.)
+- **Smoothing and filtering**: Apply moving averages to noisy sensor data while preserving meaningful spikes
+- **Feature engineering**: Calculate derived metrics like BP variability, sleep efficiency, exercise intensity zones
+- **Temporal aggregation**: Create hourly, daily, weekly summaries from raw measurements
+- **Contextual enrichment**: Add metadata like day of week, season, work vs. weekend categorization
+
+### Loading Phase:
+
+- **Duplicate handling**: Prevent reprocessing of already-stored readings
+- **Backfill operations**: Handle historical data imports and retroactive corrections
+- **Real-time streaming**: Process live data feeds with minimal latency
+- **Data validation**: Final quality checks before storage commitment
+

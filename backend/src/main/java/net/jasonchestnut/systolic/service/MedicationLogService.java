@@ -3,8 +3,12 @@ package net.jasonchestnut.systolic.service;
 import net.jasonchestnut.systolic.entity.MedicationLog;
 import net.jasonchestnut.systolic.entity.Patient;
 import net.jasonchestnut.systolic.entity.Medication;
+import net.jasonchestnut.systolic.events.EventProducerService;
+import net.jasonchestnut.systolic.events.dto.MedicationLogEvent;
 import net.jasonchestnut.systolic.exception.ResourceNotFoundException;
+import net.jasonchestnut.systolic.exception.UnauthorizedException;
 import net.jasonchestnut.systolic.repository.MedicationLogRepository;
+import net.jasonchestnut.systolic.repository.MedicationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,13 +19,36 @@ import java.util.List;
 @Transactional
 public class MedicationLogService {
     private final MedicationLogRepository medicationLogRepository;
+    private final MedicationRepository medicationRepository;
+    private final EventProducerService eventProducerService;
 
-    public MedicationLogService(MedicationLogRepository medicationLogRepository) {
+    public MedicationLogService(MedicationLogRepository medicationLogRepository, MedicationRepository medicationRepository, EventProducerService eventProducerService) {
         this.medicationLogRepository = medicationLogRepository;
+        this.medicationRepository = medicationRepository;
+        this.eventProducerService = eventProducerService;
     }
 
     public MedicationLog save(MedicationLog medicationLog) {
-        return medicationLogRepository.save(medicationLog);
+        // Security Check: Ensure the medication being logged belongs to the patient.
+        Medication medication = medicationRepository.findById(medicationLog.getMedication().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Medication not found with id: " + medicationLog.getMedication().getId()));
+
+        if (!medication.getPatient().getId().equals(medicationLog.getPatient().getId())) {
+            throw new UnauthorizedException("Access Denied: Medication does not belong to the current patient.");
+        }
+
+        MedicationLog savedLog = medicationLogRepository.save(medicationLog);
+
+        // Produce Kafka event
+        MedicationLogEvent event = new MedicationLogEvent(
+                savedLog.getPatient().getId(),
+                savedLog.getId(),
+                savedLog.getMedication().getId(),
+                savedLog.getMedication().getName(),
+                savedLog.getTakenAt());
+        eventProducerService.sendMedicationLogEvent(event);
+
+        return savedLog;
     }
 
     @Transactional(readOnly = true)
