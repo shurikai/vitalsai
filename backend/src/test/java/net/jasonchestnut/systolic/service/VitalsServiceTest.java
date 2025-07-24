@@ -5,6 +5,7 @@ import net.jasonchestnut.systolic.dto.VitalReadingResponse;
 import net.jasonchestnut.systolic.entity.Patient;
 import net.jasonchestnut.systolic.entity.Role;
 import net.jasonchestnut.systolic.entity.Vitals;
+import net.jasonchestnut.systolic.events.EventProducerService;
 import net.jasonchestnut.systolic.exception.ResourceNotFoundException;
 import net.jasonchestnut.systolic.exception.UnauthorizedException;
 import net.jasonchestnut.systolic.mapper.VitalMapper;
@@ -40,8 +41,9 @@ class VitalsServiceTest {
     private PatientRepository patientRepository;
     @Mock
     private VitalMapper vitalMapper;
+    @Mock
+    private EventProducerService eventProducerService;
 
-    @InjectMocks
     private VitalsService vitalsService;
 
     @Captor
@@ -61,16 +63,18 @@ class VitalsServiceTest {
         patient = new Patient(
                 1L, "testuser", "test@example.com", "password",
                 "Test", "User", now, now, List.of(), Role.ROLE_USER,
-                Set.of(), Set.of(), Set.of()
+                Set.of(), Set.of(), Set.of(), Set.of()
         );
 
         // The 'vitals' object now has its patient set directly at creation.
-        vitals = new Vitals(
-                100L, patient, 120, 80, 60, now, null, now, now
-        );
+        vitals = new Vitals(patient, 120, 80, 60, now);
+        vitals.setId(100L);
 
         vitalReadingRequest = new VitalReadingRequest(125, 85, 65, now, null);
         vitalReadingResponse = new VitalReadingResponse(100L, 120, 80, 60, now, null);
+        
+        // Create VitalsService with mocks
+        vitalsService = new VitalsService(vitalsRepository, patientRepository, vitalMapper, eventProducerService);
     }
 
     @Test
@@ -98,7 +102,7 @@ class VitalsServiceTest {
         Patient anotherPatient = new Patient(
                 2L, "anotheruser", "another@example.com", "password",
                 "Another", "User", OffsetDateTime.now(), OffsetDateTime.now(), List.of(), Role.ROLE_USER,
-                Set.of(), Set.of(), Set.of()
+                Set.of(), Set.of(), Set.of(), Set.of()
         );
 
         // The vital belongs to patient 1, but patient 2 is trying to access it
@@ -128,8 +132,12 @@ class VitalsServiceTest {
     void createVitalForPatient_shouldSucceed() {
         // Arrange
         // Create a new Vitals object without an ID to simulate creation
-        Vitals newVital = new Vitals(null, patient, 125, 85, 65, vitalReadingRequest.readingTimestamp(), null, null, null);
-        Vitals savedVital = new Vitals(101L, patient, 125, 85, 65, vitalReadingRequest.readingTimestamp(), null, OffsetDateTime.now(), OffsetDateTime.now());
+        Vitals newVital = new Vitals(patient, 125, 85, 65, vitalReadingRequest.readingTimestamp());
+        
+        Vitals savedVital = new Vitals(patient, 125, 85, 65, vitalReadingRequest.readingTimestamp());
+        savedVital.setId(101L);
+        savedVital.setCreatedAt(OffsetDateTime.now());
+        savedVital.setUpdatedAt(OffsetDateTime.now());
         VitalReadingResponse expectedResponse = new VitalReadingResponse(101L, 125, 85, 65, vitalReadingRequest.readingTimestamp(), null);
 
         when(patientRepository.findByUsername("testuser")).thenReturn(Optional.of(patient));

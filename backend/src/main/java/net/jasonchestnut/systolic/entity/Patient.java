@@ -69,6 +69,10 @@ public class Patient implements UserDetails {
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     private Set<ActivityLog> activityLogs = new HashSet<>();
 
+    // Add this to your existing Patient class
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
+    private Set<SleepLog> sleepLogs = new HashSet<>();
+
     // --- UserDetails Methods ---
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

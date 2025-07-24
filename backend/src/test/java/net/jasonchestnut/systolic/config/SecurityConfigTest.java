@@ -12,6 +12,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+import org.springframework.security.config.annotation.web.configurers.CorsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -73,6 +74,7 @@ class SecurityConfigTest {
         // --- Arrange ---
         // Mock the fluent API chain to return the HttpSecurity mock itself
         when(httpSecurity.csrf(any())).thenReturn(httpSecurity);
+        when(httpSecurity.cors(any())).thenReturn(httpSecurity);
         when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
         when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
         when(httpSecurity.addFilterBefore(any(), any())).thenReturn(httpSecurity);
@@ -109,8 +111,15 @@ class SecurityConfigTest {
         authCustomizerCaptor.getValue().customize(authRegistry);
 
         // Now, verify the full chain of calls
-        verify(authRegistry).requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**");
-        verify(authorizedUrlMock).permitAll();
+        verify(authRegistry).requestMatchers(
+                "/api/auth/**",
+                "/v3/api-docs/**",
+                "/v3/api-docs.yaml",
+                "/swagger-ui.html",
+                "/swagger-ui/**"
+        );
+        verify(authRegistry).requestMatchers("/api/patients/me/**");
+        verify(authorizedUrlMock, times(2)).permitAll();
         verify(authRegistry).anyRequest();
         verify(anyRequestAuthorizedUrlMock).authenticated();
         // --- End of corrected logic ---
@@ -128,5 +137,11 @@ class SecurityConfigTest {
 
         // 5. Verify the chain is built
         verify(httpSecurity, times(1)).build();
+
+        // 6. Verify the cors configuration
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Customizer<CorsConfigurer<HttpSecurity>>> corsCustomizerCaptor =
+                ArgumentCaptor.forClass(Customizer.class);
+        verify(httpSecurity).cors(corsCustomizerCaptor.capture());
     }
 }
